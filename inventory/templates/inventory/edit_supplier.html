@@ -1,0 +1,27 @@
+{% extends 'inventory/base.html' %}
+
+{% block body %}
+  {% if success %}
+    <div class="alert alert-success" role="alert">
+        Supplier updated successfully!
+        <a href="{% url 'index' %}" class="alert-link">Inventory</a>
+  {% else %}
+    <div class="row justify-content-center">
+      <div class="col-6">
+        <div class="card bg-light mb-4 mt-4">
+          <div class="card-header">
+            <i class="fa-solid fa-boxes-stacked fa-lg"></i> Update Supplier {{ supplier.name }}
+          </div>
+          <div class="card-body">
+            <form action="{% url 'edit_supplier' supplier.id %}" method="POST">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <button type="submit" class="btn btn-primary">Update</button>
+              <a href="{% url 'index' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

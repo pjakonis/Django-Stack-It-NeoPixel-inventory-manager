@@ -1,63 +1,88 @@
 {% extends 'inventory/base.html' %}
 
 {% block body %}
-<div class="row">
+<div class="container mt-4">
+  <div class="row">
     <div class="col-md-12">
       {% if items %}
-      <div class="card text-white bg-primary mt-4 ms-4 me-4 mb-4">
+      <div class="card text-white bg-primary mb-5">
         <div class="card-header"><i class="fa-solid fa-boxes-stacked fa-lg"></i> Inventory</div>
         <div class="card-body">
-          <p class="card-text">
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead class="table-active">
-              <tr>
-                <th scope="col">Code</th>
-                <th scope="col">Title</th>
-                <th scope="col">Slot</th>
-                <th scope="col">Amount</th>
-                <th scope="col">Actions</th>
-              </tr>
-              </thead>
-              <tbody>
-              {% for item in items %}
-              <tr>
-                <td class="align-middle">{{ item.code }}</td>
-                <td class="align-middle">{{ item.title }}</td>
-                <td class="align-middle">{{ item.slot }}</td>
-                <td class="align-middle">{{ item.amount }}</td>
-                <td class="align-middle">
-                  <button type="button" class="btn btn-success me-1" href="{% url 'view_item' item.id %}"
-                          data-bs-toggle="modal" data-bs-target="#myModal{{Item.id}}">
+          <form method="get" action="{% url 'index' %}" class="mb-3">
+            <div class="input-group">
+              {% if request.GET.q %}
+              <a href="{% url 'index' %}" class="btn btn-outline-secondary"><i class="fa fa-times"></i></a>
+              {% endif %}
+              <input type="text" class="form-control" placeholder="Search for an item or code..." name="q" value="{{ request.GET.q }}">
+              <button class="btn btn-outline-secondary" type="submit"><i class="fa fa-search"></i></button>
+            </div>
+          </form>
+          <div class="row">
+            {% for item in items %}
+            <div class="col-md-4 mb-4">
+              <div class="card h-100">
+                <div class="card-header">
+                  {{ item.title }}
+                </div>
+                <div class="card-body">
+                  <h5 class="card-title">{{ item.code }}</h5>
+                  <p class="card-text">Slot: {{ item.slot }}</p>
+                  Amount:
+                  <div class="input-group mb-3">
+                    <button class="btn btn-outline-secondary" type="button" onclick="decrementValue('{{ item.id }}')">
+                      <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <input type="text" class="form-control text-center" value="{{ item.amount }}"
+                           id="amount-input-{{ item.id }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="incrementValue('{{ item.id }}')">
+                      <i class="fa-solid fa-plus"></i>
+                    </button>
+                  </div>
+                  <button type="button" class="btn btn-primary update-btn" data-item-id="{{ item.id }}">
+                    Update
+                  </button>
+                </div>
+                <div class="card-footer">
+                  <button type="button" class="btn btn-success me-1" data-bs-toggle="modal" data-bs-target="#myModal{{ item.id }}">
                     <i class="fa-solid fa-circle-info fa-lg"></i>
                   </button>
+                  <a href="{% url 'edit_item' item.id %}" class="btn btn-warning me-1">
+                    <i class="fa-solid fa-pencil fa-lg"></i>
+                  </a>
+                  <button type="button" class="btn btn-danger me-1" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
+                    <i class="fa-solid fa-trash fa-lg"></i>
+                  </button>
+                  <button onclick="controlLED({{ item.slot }})" class="btn btn-info">
+                    <i class="fa-solid fa-lightbulb fa-lg"></i>
+                  </button>
 
-                  <div class="modal" id="myModal{{Item.id}}" tabindex="-1" aria-labelledby="exampleModalLabel1"
-                       aria-hidden="true">
-                    <div class="modal-dialog" role="document">
+                  <!-- Item Detail Modal -->
+                  <div class="modal fade" id="myModal{{ item.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
                       <div class="modal-content">
                         <div class="modal-header">
-                          <h5 class="modal-title">
-                            {{ item.title }}
-                          </h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true"></span>
-                          </button>
+                          <h5 class="modal-title" id="exampleModalLabel">{{ item.title }}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                          <table class="table table-striped table-hover">
-                            <tbody>
+                          <table class="table">
                             <tr>
                               <th scope="row">Code</th>
                               <td>{{ item.code }}</td>
                             </tr>
                             <tr>
                               <th scope="row">Supplier</th>
-                              <td>{{ item.supplier }}</td>
+                              <td>
+                                <a href="#" class="text-primary" data-bs-toggle="modal"
+                                   data-bs-target="#supplierModal{{ item.supplier.id }}"
+                                   style="text-decoration: underline;">
+                                  {{ item.supplier.name }}
+                                </a>
+                              </td>
                             </tr>
                             <tr>
                               <th scope="row">Link</th>
-                              <td><a href="{{ item.link }}">{{ item.link }}</a></td>
+                              <td><a href="{{ item.link }}" target="_blank">{{ item.link }}</a></td>
                             </tr>
                             <tr>
                               <th scope="row">Slot</th>
@@ -71,34 +96,201 @@
                               <th scope="row">Amount</th>
                               <td>{{ item.amount }}</td>
                             </tr>
-                            </tbody>
                           </table>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                         </div>
                       </div>
                     </div>
                   </div>
-                </td>
-                {% endfor %}
-              </tbody>
-            </table>
+
+                  <!-- Delete Confirmation Modal -->
+                  <div class="modal fade" id="deleteModal{{ item.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ item.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="deleteModalLabel{{ item.id }}">Delete Item</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          Are you sure you want to delete this item?
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                          <a href="{% url 'delete_item' item.id %}" class="btn btn-danger">Delete</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
           </div>
-          </p>
+          {% for item in items %}
+          <div class="modal fade" id="supplierModal{{ item.supplier.id }}" tabindex="-1"
+               aria-labelledby="supplierModalLabel{{ item.supplier.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="supplierModalLabel{{ item.supplier.id }}" style="color: black;">
+                    {{ item.supplier.name }}
+                  </h5>
+                  <button type="button" class="btn"
+                          onclick="window.location.href='{% url 'edit_supplier' item.supplier.id %}';"
+                          style="background: none; color: #000; margin-right: 10px;">
+                    <i class="fa-solid fa-pencil fa-lg"></i>
+                  </button>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <table class="table">
+                    <tr>
+                      <th scope="row">Name</th>
+                      <td>{{ item.supplier.name }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Address</th>
+                      <td>{{ item.supplier.address }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Contact Person</th>
+                      <td>{{ item.supplier.contact_person }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Phone</th>
+                      <td>{{ item.supplier.phone }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Email</th>
+                      <td>{{ item.supplier.email }}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Website</th>
+                      <td>
+                        <a href="{% if 'http://' not in item.supplier.website and 'https://' not in item.supplier.website %}http://{{ item.supplier.website }}{% else %}{{ item.supplier.website }}{% endif %}"
+                           target="_blank">{{ item.supplier.website }}</a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          <!-- Pagination -->
+          <div class="d-flex justify-content-center">
+            <ul class="pagination pagination-sm">
+              {% if items.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page={{ items.previous_page_number }}">&laquo;</a></li>
+              {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+              {% endif %}
+              {% for page_num in items.paginator.page_range %}
+              {% if page_num == items.number %}
+              <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+              {% else %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+              {% endif %}
+              {% endfor %}
+              {% if items.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ items.next_page_number }}">&raquo;</a></li>
+              {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+              {% endif %}
+            </ul>
+          </div>
         </div>
       </div>
       {% else %}
-      <div class="card text-white bg-primary mt-4 ms-4 me-4 mb-4">
-        <div class="card-header"><i class="fa-solid fa-boxes-stacked fa-lg"></i> Inventory</div>
-        <div class="card-body">
-          <p class="card-text">
-          <div class="alert alert-warning mt-4 ms-4 me-4 mb-4" role="alert">
-            <i class="fa-solid fa-exclamation-triangle fa-lg"></i> No items found.</p>
-          </div>
-        </div>
-
-        {% endif %}
+      <div class="alert alert-warning" role="alert">
+        <i class="fa-solid fa-exclamation-triangle fa-lg"></i> No items found.
       </div>
+      {% endif %}
     </div>
+  </div>
+</div>
+
+<script>
+function controlLED(slot) {
+  const url = `http://192.168.1.162/led?num=${slot}&red=0&green=157&blue=196`;
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.text();
+    })
+    .then(data => console.log(data))
+    .catch(error => console.error('There has been a problem with your fetch operation:', error));
+}
+
+function incrementValue(id) {
+  var value = parseInt(document.getElementById('amount-input-' + id).value, 10);
+  value = isNaN(value) ? 0 : value;
+  value++;
+  document.getElementById('amount-input-' + id).value = value;
+}
+
+function decrementValue(id) {
+  var value = parseInt(document.getElementById('amount-input-' + id).value, 10);
+  value = isNaN(value) ? 0 : value;
+  value < 1 ? value = 0 : value--;
+  document.getElementById('amount-input-' + id).value = value;
+}
+</script>
+<script>
+    document.querySelectorAll('.update-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const newAmount = document.getElementById('amount-input-' + itemId).value;
+            updateItemAmount(itemId, newAmount);
+        });
+    });
+
+    function updateItemAmount(itemId, newAmount) {
+        const url = `/update_item_amount/${itemId}/`;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ amount: newAmount })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update successful, you may handle UI changes if needed
+                console.log('Item amount updated successfully');
+            } else {
+                // Handle errors
+                console.error('Item amount update failed:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
 {% endblock %}
